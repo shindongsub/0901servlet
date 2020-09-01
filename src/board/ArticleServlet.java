@@ -88,13 +88,26 @@ public class ArticleServlet extends HttpServlet {
 			String aid = (String)request.getParameter("aid");
 			String uid = (String)request.getParameter("uid");
 			String flag = (String)request.getParameter("flag");
+			
 			int likeFlag = 0;
 			if(flag.equals("like")) {
 				likeFlag = 1;
 			}else {
 				likeFlag = 2;
 			}
-			dao.addLike(aid, uid, likeFlag);
+			if(dao.checkLikeDuplication(aid, uid)>0) {
+				int findedFlag = dao.getLikeByArticleIdandUserId(aid, uid);
+				if(findedFlag == likeFlag) {//좋아요 값이 같으냐
+					dao.deleteLikeByArticleIdAndUser(aid, uid);
+				}else {
+					dao.updateLikeByArticleIdAndUser(aid, uid, likeFlag);
+				}
+					
+			
+			}else {
+				dao.addLike(aid, uid, likeFlag);
+				
+			}
 			
 		} else if(cmd.equals("articleForm")) {
 			pw.println("<form action='http://localhost:8090/article'>");

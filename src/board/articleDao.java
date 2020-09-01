@@ -275,4 +275,69 @@ public class articleDao {
 		}	
 		
 	}
+	public int checkLikeDuplication(String aid, String uid) {
+		String sql = "select count(*) cnt from `like` where aid = "+aid+" and uid = "+uid;
+		int rst = 0;
+		conn = getConnection();
+		try {
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(sql);
+
+			if (rs.next()) {
+				rst = rs.getInt("cnt");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return rst;
+	}
+
+	public int getLikeByArticleIdandUserId(String aid, String uid) {
+		String sql = "select likeFlag from `like` where aid = "+aid+" and uid = "+uid;
+		int rst = 0;
+		conn = getConnection();
+		try {
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(sql);
+
+			if (rs.next()) {
+				rst = rs.getInt("likeFlag");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return rst;
+	}
+
+	public void deleteLikeByArticleIdAndUser(String aid, String uid) {
+		String sql = "delete from `like` where aid =" + aid + " and uid = "+uid;
+		conn = getConnection();
+		try {
+			stmt = conn.createStatement();
+			stmt.executeUpdate(sql);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			close();
+		}
+	}
+
+	public void updateLikeByArticleIdAndUser(String aid, String uid, int likeFlag) {
+		String sql = "update `like` set likeFlag = " + likeFlag + "' where aid = " + aid + " and uid = "+uid;
+		conn = getConnection();
+		try {
+			stmt = conn.createStatement();
+			stmt.executeUpdate(sql);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			close();
+		}		
+	}
 }
