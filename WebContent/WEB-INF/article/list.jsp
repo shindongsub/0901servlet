@@ -17,8 +17,7 @@ List<Article> articles = (List<Article>)request.getAttribute("articles");
 for(int i=0; i < articles.size(); i++){
 %>
 <div>
-  번호    : <%= articles.get(i).getId() %><br>
-  제목    : <%= articles.get(i).getTitle() %><br>
+  <a href="http://localhost:8090/article?cmd=read&id= <%= articles.get(i).getId() %>"> 제목    : <%= articles.get(i).getTitle() %></a><br>
   내용    : <%= articles.get(i).getBody() %><br>
   작성자 : <%= articles.get(i).getNickname() %><br>
   조회수 : <%= articles.get(i).getHit() %><br>
@@ -29,6 +28,6 @@ for(int i=0; i < articles.size(); i++){
 <%	
 }
 %>
-
+<a href="http://localhost:8090/article?cmd=showArticle">글쓰기</a>
 </body>
 </html>

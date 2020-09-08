@@ -27,9 +27,12 @@ public class ArticleServlet extends HttpServlet {
 
 		String cmd = request.getParameter("cmd");
 		PrintWriter pw = response.getWriter(); // 브라우저에 찍어라
+		if (cmd == null) {
+			cmd = "showLogin";
+		}
 		if (cmd.equals("list")) {
-					
-			List<Article> articles = dao.getAllArticles();
+			String currentPage = request.getParameter("currentPage");
+			List<Article> articles = dao.getByCurrentPage(currentPage);
 			//request객체에 데이터 저장
 			request.setAttribute("articles", articles);
 			//forwarding 해야되는데, 해주는 녀석이 RequestDispatcher
@@ -47,6 +50,7 @@ public class ArticleServlet extends HttpServlet {
 			
 			String url = ARTICLE_PATH+"detail"+EXTENTION;
 			forwarding(request, response, url);
+			
 		} else if (cmd.equals("detailForm")) {
 			String id = request.getParameter("id");
 			Article article = dao.getArticleById(id);
@@ -66,8 +70,17 @@ public class ArticleServlet extends HttpServlet {
 			
 		} else if(cmd.equals("delete")) {
 			String id = request.getParameter("id");
+			String test = request.getParameter("test");
 			
-			dao.deleteArticle(id);
+			try {
+				dao.deleteArticle(id);
+				
+			}catch(Exception e) {
+				System.out.println("DB ERROR!!");
+			}
+
+			
+			
 		} else if(cmd.equals("reply")) {
 			String body = request.getParameter("body");
 			String parentId = request.getParameter("parentId");
@@ -82,39 +95,55 @@ public class ArticleServlet extends HttpServlet {
 			request.setAttribute("articles", list);
 			String url = ARTICLE_PATH+"list"+EXTENTION;
 			forwarding(request, response, url);
-			
-			
+
 		} else if(cmd.equals("like")) {
-			String aid = (String)request.getParameter("aid");
-			String uid = (String)request.getParameter("uid");
-			String flag = (String)request.getParameter("flag");
-			
+			String aid = request.getParameter("aid");
+			String uid = request.getParameter("uid");
+			String flag = request.getParameter("flag");
 			int likeFlag = 0;
-			if(flag.equals("like")) {
+			
+			if (flag.equals("like")) {
 				likeFlag = 1;
 			}else {
 				likeFlag = 2;
 			}
-			if(dao.checkLikeDuplication(aid, uid)>0) {
-				int findedFlag = dao.getLikeByArticleIdandUserId(aid, uid);
-				if(findedFlag == likeFlag) {//좋아요 값이 같으냐
-					dao.deleteLikeByArticleIdAndUser(aid, uid);
+			if (dao.checkLikeDuplication(aid, uid)>0) {
+				int findFlag = dao.getLikeByArticleIdAndUserId(aid, uid);
+				if (findFlag == likeFlag) {
+					dao.deleteLikeByArticleIdAndUserId(aid, uid);
 				}else {
-					dao.updateLikeByArticleIdAndUser(aid, uid, likeFlag);
+					dao.updateLikeByArticleIdAndUserId(aid, uid, likeFlag);
 				}
-					
-			
+				
 			}else {
 				dao.addLike(aid, uid, likeFlag);
-				
 			}
-			
-		} else if(cmd.equals("articleForm")) {
+
+		}else if(cmd.equals("articleForm")) {
 			pw.println("<form action='http://localhost:8090/article'>");
 			pw.println("<input type='text' name='cmd' placeholder = '명령어 입력'>");
 			pw.println("<input type='text' name='id' placeholder = '번호'>");
 			pw.println("<input type='submit'>");
 			pw.println("</form>");
+			
+		}else if(cmd.equals("login")) {
+			String loginId = request.getParameter("loginId");
+			String loginPw = request.getParameter("loginPw");
+			
+			
+			Member loginedMember = dao.loginChek(loginId, loginPw);
+			if(loginedMember != null) {
+				response.sendRedirect("article?cmd=list&currentPage=1");
+			}
+			
+			
+		}else if(cmd.equals("showLogin")) {
+			String url = "/WEB-INF/login"+EXTENTION;
+			forwarding(request, response, url);
+			
+		}else if(cmd.equals("showArticle")) {
+			String url = ARTICLE_PATH + "addArticle" + EXTENTION;
+			forwarding(request, response, url);
 		}
 	}
 	void forwarding(HttpServletRequest req, HttpServletResponse res, String url) {

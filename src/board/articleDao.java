@@ -2,6 +2,7 @@ package board;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -132,15 +133,28 @@ public class articleDao {
 	}
 
 	public void deleteArticle(String id) {
-
 		String sql = "delete from article where id =" + id;
+		String sq2 = "delete from reply where parentId =" + id;
+		String sq3 = "delete from `like` where aid =" + id;
+
 		conn = getConnection();
 		try {
 			stmt = conn.createStatement();
+			//자동커밋 해제
+			conn.setAutoCommit(false);
 			stmt.executeUpdate(sql);
-
+			stmt.executeUpdate(sq2);
+			stmt.executeUpdate(sq3);
+			//커밋 불러와주고.
+			conn.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			try {
+				//롤백해주고 try문해주면 끝! 하는이유? id값이 3개중에 2개다. 하난없다? 그럼 삭제안되. 나머지 두개를 삭제하는방법임.
+				conn.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
 			close();
 		}
@@ -258,12 +272,7 @@ public class articleDao {
 
 			conn = getConnection();
 			stmt = conn.createStatement();
-			
-			String sql = "INSERT INTO `like` " + 
-					"SET aid = " + aid + "," + 
-					"uid = '" + uid + "'," + 
-					"likeFlag = '" + flag + "', " + 
-					"regDate = NOW()";
+			String sql = "INSERT INTO `like` set aid = "+aid+", uid = "+uid+", likeFlag = "+flag+", regDate = now()" ;
 
 			stmt.executeUpdate(sql);
 		} catch (SQLException e) {
@@ -275,8 +284,9 @@ public class articleDao {
 		}	
 		
 	}
+
 	public int checkLikeDuplication(String aid, String uid) {
-		String sql = "select count(*) cnt from `like` where aid = "+aid+" and uid = "+uid;
+		String sql = "select count(*) cnt from `like` where aid = " + aid+" and uid = "+uid;
 		int rst = 0;
 		conn = getConnection();
 		try {
@@ -294,8 +304,8 @@ public class articleDao {
 		return rst;
 	}
 
-	public int getLikeByArticleIdandUserId(String aid, String uid) {
-		String sql = "select likeFlag from `like` where aid = "+aid+" and uid = "+uid;
+	public int getLikeByArticleIdAndUserId(String aid, String uid) {
+		String sql = "select likeFlag from `like` where aid = " + aid+" and uid = "+uid;
 		int rst = 0;
 		conn = getConnection();
 		try {
@@ -313,7 +323,7 @@ public class articleDao {
 		return rst;
 	}
 
-	public void deleteLikeByArticleIdAndUser(String aid, String uid) {
+	public void deleteLikeByArticleIdAndUserId(String aid, String uid) {
 		String sql = "delete from `like` where aid =" + aid + " and uid = "+uid;
 		conn = getConnection();
 		try {
@@ -327,8 +337,9 @@ public class articleDao {
 		}
 	}
 
-	public void updateLikeByArticleIdAndUser(String aid, String uid, int likeFlag) {
-		String sql = "update `like` set likeFlag = " + likeFlag + "' where aid = " + aid + " and uid = "+uid;
+	public void updateLikeByArticleIdAndUserId(String aid, String uid, int likeFlag) {
+		String sql = "update `like` set likeFlag = " + likeFlag +" where aid = " + aid + " and uid = "+uid;
+		System.out.println(sql);
 		conn = getConnection();
 		try {
 			stmt = conn.createStatement();
@@ -338,6 +349,71 @@ public class articleDao {
 			e.printStackTrace();
 		} finally {
 			close();
-		}		
+		}
+		
 	}
+
+	public Member loginChek(String id, String pw) {
+		String sql = "select * from login where loginId = ? and loginPw = ?";
+		Member member = null;
+		conn = getConnection();
+		try {
+			
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, id);
+			pstmt.setString(2, pw);
+//			stmt = conn.createStatement();
+			rs = pstmt.executeQuery();
+
+			if (rs.next()) {
+				member = new Member();
+
+				member.setId(rs.getInt("id"));
+				member.setLoginId(rs.getString("loginId"));
+				member.setLoginPw(rs.getString("loginPw"));
+				member.setNickname(rs.getString("nickname"));
+				member.setRegDate(rs.getString("RegDate"));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return member;
+		
+	}
+
+	public List<Article> getByCurrentPage(String currentPage) {
+		List<Article> articles = null;
+		int currentPageNo = Integer.parseInt(currentPage);
+		int start = (currentPageNo - 1)*3;
+		
+		
+		try {
+			String sql = "select * from article limit "+start+", 3";
+			conn = getConnection();
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(sql);
+			articles = new ArrayList<>();
+			
+			while(rs.next()) {
+				int id = rs.getInt("id");
+				String title = rs.getString("title");
+				String body = rs.getString("body");
+				String nickname = rs.getString("nickname");
+				int hit = rs.getInt("hit");
+				
+				Article article = new Article(id, title, body, nickname, hit);
+				articles.add(article);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return articles;
+	}
+
+
+
+	
+	
 }
